@@ -1,0 +1,37 @@
+# Project Emulator
+
+A standalone retro console built on the PYNQ-Z2 (Zynq-7020), with the work split
+the way the original hardware split it:
+
+- **ARM (PS)** runs the guest CPU, mappers, and game logic.
+- **FPGA (PL)** runs the PPU, the scaler, and the HDMI transmitter.
+
+The result is a cartridge-less NES-class console: SD card for ROMs, Bluetooth
+8BitDo controller over a USB dongle, HDMI to the TV, and a stripped Linux image
+that boots straight into the emulator.
+
+Status: early. The architecture and roadmap are in [`docs/`](docs/). Nothing
+runs on hardware yet.
+
+## Repository layout
+
+```
+docs/          architecture, roadmap, decisions, board notes
+hw/            RTL, simulation, constraints, Vivado build scripts
+sw/            emulator core, userland tools
+os/            Buildroot defconfig and rootfs overlay
+scripts/       host-side helpers
+```
+
+## Build (planned)
+
+```bash
+make hw        # Vivado: bitstream + XSA
+make os        # Buildroot: SD image
+make sw        # emulator for ARM
+```
+
+## License
+
+Original code in this repository is MIT licensed. Vendored third-party code
+keeps its own license; see [`THIRD_PARTY.md`](THIRD_PARTY.md).

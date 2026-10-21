@@ -1,0 +1,40 @@
+# Vivado / Xilinx
+*.jou
+*.log
+*.str
+*.xpr
+*.xsa
+.Xil/
+.vivado-ai/
+hw/build/
+hw/vivado/
+hw/**/ip/**/.*
+!hw/**/ip/**/.gitkeep
+
+# Buildroot / Linux
+os/buildroot/
+os/output/
+os/dl/
+os/images/
+*.o
+*.a
+*.so
+*.elf
+*.bin
+*.img
+
+# Emulator build
+sw/nes/build/
+sw/nes/*.o
+roms/
+*.nes
+
+# Editors
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Python
+__pycache__/
+.venv/
