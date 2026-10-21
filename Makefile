@@ -30,6 +30,7 @@ hw:
 
 sw:
 	$(MAKE) -C sw/console
+	@if [ -d sw/nes ]; then $(MAKE) -C sw/nes; fi
 
 os:
 	$(MAKE) -C os
