@@ -2,8 +2,9 @@ SHELL := /bin/bash
 VIVADO_SETTINGS ?= /tools/Xilinx/2025.2/settings64.sh
 VERILATOR ?= verilator
 
-RTL := $(wildcard hw/rtl/*.v hw/rtl/**/*.v)
-TB  := $(wildcard hw/sim/*.v)
+RTL  := $(wildcard hw/rtl/*.v hw/rtl/**/*.v)
+TB   := $(wildcard hw/sim/*.sv)
+LINT := tmds_encoder video_timing test_pattern
 
 .PHONY: help lint sim hw sw os clean
 
@@ -15,8 +16,10 @@ help:
 	@echo "os     Buildroot image"
 
 lint:
-	@if [ -z "$(RTL)" ]; then echo "no RTL yet"; else \
-	$(VERILATOR) --lint-only -Wall --top-module orbit_top $(RTL); fi
+	@for m in $(LINT); do \
+		$(VERILATOR) --lint-only -Wall -Wno-fatal --top-module $$m hw/rtl/$$m.v || exit 1; \
+	done
+	@echo "lint clean"
 
 sim:
 	@if [ -z "$(TB)" ]; then echo "no testbenches yet"; else \

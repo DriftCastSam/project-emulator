@@ -16,7 +16,7 @@
 
 ## HDMI out pins
 
-From the Digilent board file (`A.0/part0_pins.xml`), all LVCMOS33:
+From the Digilent board file (`A.0/part0_pins.xml`):
 
 | Signal | Pin |
 |---|---|
@@ -31,22 +31,33 @@ From the Digilent board file (`A.0/part0_pins.xml`), all LVCMOS33:
 | hdmi_tx_hpd | R19 |
 | hdmi_tx_cec | G15 |
 
-The pins are LVCMOS33 in the board file, not TMDS_33. Use LVCMOS33 in the
-XDC and let the board's output network do the rest. This matches Digilent's
-rgb2dvi reference for this board.
+The board XML lists the data and clock pins as LVCMOS33, but the connector is
+TMDS and TUL's master XDC, the PYNQ base overlay, and every working PYNQ-Z2
+HDMI design constrain them as TMDS_33. Use TMDS_33. The HPD and CEC pins stay
+LVCMOS33.
 
 ## Clocking
 
-The only PL clock is 125 MHz. The video MMCM generates:
+The only PL clock is 125 MHz. Two MMCMs turn it into the video clocks:
 
 | Clock | Frequency | Use |
 |---|---|---|
 | pixel | 74.21875 MHz | video timing, scaler, TMDS parallel data |
 | serial | 371.09375 MHz | OSERDESE2 high-speed clock |
-| ppu | 5.371 MHz | NES PPU dot clock |
+| ppu | 5.37 MHz | NES PPU dot clock (M5) |
 
-`74.21875 * 5 = 371.09375`, so the serial clock is exactly 5x the pixel clock,
-which is what 10:1 DDR serialization needs.
+One MMCM cannot make both 74.21875 and 371.09375 MHz from 125 MHz: the
+fractional multiplier would need 5.9375, and the hardware granularity is
+0.125. So:
+
+- MMCM1: 125 MHz x 7.125 / 12 = 74.21875 MHz (VCO 890.625 MHz)
+- MMCM2: 74.21875 MHz x 10 = 742.1875 MHz VCO, /2 = 371.09375 MHz serial,
+  /10 = 74.21875 MHz
+
+The serial clock is exactly 5x the pixel clock, which is what 10:1 DDR
+serialization needs. Pixel logic runs from a BUFR divide-by-5 of the serial
+clock so that CLK and CLKDIV stay aligned at the OSERDESE2, matching
+Digilent's reference structure.
 
 ## Boot
 

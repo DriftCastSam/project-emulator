@@ -38,3 +38,7 @@ roms/
 # Python
 __pycache__/
 .venv/
+
+# Vivado stray reports
+NA/
+hw/sim/obj/
