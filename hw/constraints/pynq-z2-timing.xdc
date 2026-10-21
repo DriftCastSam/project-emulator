@@ -5,4 +5,4 @@
 set_clock_groups -asynchronous \
     -group [get_clocks clk_fpga_0] \
     -group [get_clocks sys_clk] \
-    -group [get_clocks clk_pixel]
+    -group [get_clocks -filter {NAME =~ *clk_pixel_raw*}]

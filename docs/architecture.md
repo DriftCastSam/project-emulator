@@ -88,19 +88,24 @@ NES output is 256x240. At 3x it becomes 768x720, centered horizontally with a
 
 ### 4.3 Framebuffer
 
-One 256x240 RGB565 framebuffer lives in BRAM (about 30 BRAM36), dual clocked:
+Two 256x240 RGB565 banks live in BRAM (about 60 BRAM36 total), dual clocked:
 
-- write side: PPU pixel clock, or the DDR copy engine
+- write side: DDR copy engine, later the hardware PPU
 - read side: pixel clock, 3x nearest-neighbor
 
-Two producers can fill it:
+The copy engine is a read-only AXI4 master on HP0. It pulls 120 KiB with
+64-bit bursts and unpacks one pixel per clock, about 0.8 ms per frame. It
+always writes the bank that is not on screen; the display swaps banks at the
+next frame start, so there is no tearing.
 
-1. **Hardware PPU** renders directly into it.
-2. **Software PPU** renders into a reserved DDR region; a small AXI master
-   copies 120 KiB into BRAM during vblank (about 0.15 ms at 800 MB/s).
+Two producers can fill a bank:
 
-A test pattern generator (color bars, gradient, moving checkerboard) can be
-selected instead, so HDMI can be brought up before any emulator exists.
+1. **Hardware PPU** renders directly into it (M5).
+2. **Software PPU** renders into a reserved DDR region, then triggers the
+   copy engine.
+
+A test pattern generator (colour bars, moving box, grey ramp) can be selected
+instead, so HDMI can be brought up before any emulator exists.
 
 ### 4.4 TMDS
 
@@ -123,13 +128,14 @@ PL AXI-Lite register map, 4 KiB:
 
 | Offset | Name | Description |
 |---|---|---|
-| 0x000 | ID | version and build |
-| 0x004 | CTRL | enable, source select, test pattern |
-| 0x008 | STATUS | locked, vblank, frame counter |
-| 0x00C | FB_ADDR | DDR physical address of software framebuffer |
+| 0x000 | ID | "ORB1" |
+| 0x004 | CTRL | [0] test pattern, [1] animate |
+| 0x008 | STATUS | [0] locked, [1] vsync, [2] frame ready, [31:16] frame count |
+| 0x00C | FB_ADDR | DDR physical address of the software framebuffer |
 | 0x010 | FB_STRIDE | bytes per line (512) |
-| 0x014 | DMA_CTRL | start copy, busy, done |
-| 0x018 | HPD | HDMI hot-plug detect |
+| 0x014 | DMA_CTRL | [0] start copy (latches FB_ADDR) |
+| 0x018 | DMA_STATUS | [0] busy, [1] done, [2] error |
+| 0x01C | SCRATCH | read/write test register |
 | 0x100+ | PPU | PPU register mirror (phase 5) |
 
 ## 6. Hardware PPU

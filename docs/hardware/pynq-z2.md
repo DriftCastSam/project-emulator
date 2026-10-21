@@ -55,9 +55,9 @@ fractional multiplier would need 5.9375, and the hardware granularity is
   /10 = 74.21875 MHz
 
 The serial clock is exactly 5x the pixel clock, which is what 10:1 DDR
-serialization needs. Pixel logic runs from a BUFR divide-by-5 of the serial
-clock so that CLK and CLKDIV stay aligned at the OSERDESE2, matching
-Digilent's reference structure.
+serialization needs. Pixel logic runs from a global BUFG: the frame store is
+a RAMB array that spans clock regions, and a regional BUFR cannot drive it.
+The serial clock uses a BUFIO, as the OSERDESE2 requires.
 
 ## Boot
 

@@ -4,7 +4,7 @@ VERILATOR ?= verilator
 
 RTL  := $(wildcard hw/rtl/*.v hw/rtl/**/*.v)
 TB   := $(wildcard hw/sim/*.sv)
-LINT := tmds_encoder video_timing test_pattern
+LINT := tmds_encoder video_timing test_pattern fb_dma
 
 .PHONY: help lint sim hw sw os clean
 
