@@ -42,3 +42,5 @@ __pycache__/
 # Vivado stray reports
 NA/
 hw/sim/obj/
+sw/console/fbdemo
+sw/console/tests/test_convert
