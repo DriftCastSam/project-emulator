@@ -35,6 +35,8 @@ apply_bd_automation -rule xilinx.com:bd_rule:processing_system7 \
     -config {make_external "FIXED_IO, DDR" apply_board_preset "1" Master "Disable" Slave "Disable"} \
     [get_bd_cells ps7]
 
+set_property -dict [list CONFIG.PCW_USE_S_AXI_HP0 {1}] [get_bd_cells ps7]
+
 create_bd_cell -type module -reference orbit_video video
 
 # 125 MHz board oscillator into the video block.
@@ -48,8 +50,21 @@ apply_bd_automation -rule xilinx.com:bd_rule:axi4 \
               ddr_seg {Auto} intc_ip {New AXI Interconnect} master_apm {0} } \
     [get_bd_intf_pins video/S_AXI]
 
-assign_bd_address -target_address_space [get_bd_addr_spaces ps7/Data] \
-    [get_bd_addr_segs video/S_AXI/Reg] -force
+# AXI4 read master -> HP0, for the DDR to frame-store copy. HP0 is AXI3, so
+# the master goes through a protocol converter. The axi4 automation rule does
+# not accept an AXI4 master into HP0, so this path is wired by hand.
+create_bd_cell -type ip -vlnv xilinx.com:ip:axi_protocol_converter pc
+set_property -dict [list CONFIG.SI_PROTOCOL {AXI4} CONFIG.MI_PROTOCOL {AXI3} \
+    CONFIG.DATA_WIDTH {64} CONFIG.ID_WIDTH {6} CONFIG.ADDR_WIDTH {32} \
+    CONFIG.READ_WRITE_MODE {READ_WRITE}] [get_bd_cells pc]
+
+connect_bd_intf_net [get_bd_intf_pins video/M_AXI] [get_bd_intf_pins pc/S_AXI]
+connect_bd_intf_net [get_bd_intf_pins pc/M_AXI] [get_bd_intf_pins ps7/S_AXI_HP0]
+connect_bd_net [get_bd_pins ps7/FCLK_CLK0] [get_bd_pins pc/aclk] [get_bd_pins ps7/S_AXI_HP0_ACLK]
+connect_bd_net [get_bd_pins rst_ps7_100M/peripheral_aresetn] [get_bd_pins pc/aresetn]
+
+assign_bd_address -target_address_space /video/M_AXI \
+    [get_bd_addr_segs ps7/S_AXI_HP0/HP0_DDR_LOWOCM] -force
 
 # HDMI pins.
 foreach p {hdmi_clk_p hdmi_clk_n hdmi_hpd} {
