@@ -1,0 +1,1 @@
+source "$BR2_EXTERNAL_ORBIT_PATH/package/orbit-console/Config.in"

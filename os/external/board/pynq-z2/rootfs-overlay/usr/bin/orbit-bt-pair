@@ -1,0 +1,28 @@
+#!/bin/sh
+#
+# One-time pairing helper. Put the 8BitDo in pairing mode first:
+#   XInput mode: hold Start + X until the LED blinks
+# Then run:
+#   orbit-bt-pair AA:BB:CC:DD:EE:FF
+#
+# The MAC is saved so S45orbit-bt reconnects on every boot.
+
+MAC="$1"
+
+if [ -z "$MAC" ]; then
+	echo "usage: orbit-bt-pair <MAC>" >&2
+	echo "       find the MAC with: bluetoothctl scan on" >&2
+	exit 1
+fi
+
+mkdir -p /etc/orbit
+printf 'MAC=%s\n' "$MAC" > /etc/orbit/controller.conf
+
+bluetoothctl <<-EOF
+power on
+agent NoInputNoOutput
+default-agent
+pair $MAC
+trust $MAC
+connect $MAC
+EOF

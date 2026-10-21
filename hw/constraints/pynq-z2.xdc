@@ -5,6 +5,9 @@
 set_property CFGBVS VCCO [current_design]
 set_property CONFIG_VOLTAGE 3.3 [current_design]
 
+# U-Boot loads the raw bitstream with `fpga load`, so ask bitgen for both.
+set_property BITSTREAM.GENERAL.BIN_FILE TRUE [current_design]
+
 # 125 MHz oscillator.
 set_property -dict { PACKAGE_PIN H16 IOSTANDARD LVCMOS33 } [get_ports sys_clk]
 create_clock -name sys_clk -period 8.000 -waveform {0.000 4.000} [get_ports sys_clk]

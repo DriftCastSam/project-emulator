@@ -1,0 +1,29 @@
+#!/bin/sh
+#
+# The console owns the display. If a ROM is on the card, start the emulator;
+# otherwise run the framebuffer demo so the video path is still exercised.
+
+DAEMON=/usr/bin/orbit-nes
+DEMO=/usr/bin/fbdemo
+PIDFILE=/var/run/console.pid
+
+case "$1" in
+start)
+	mkdir -p /roms /var/log
+
+	ROM=$(ls /roms/*.nes 2>/dev/null | head -n 1)
+
+	if [ -n "$ROM" ] && [ -x "$DAEMON" ]; then
+		start-stop-daemon -S -b -m -p "$PIDFILE" -x "$DAEMON" -- "$ROM"
+	elif [ -x "$DEMO" ]; then
+		start-stop-daemon -S -b -m -p "$PIDFILE" -x "$DEMO"
+	fi
+	;;
+stop)
+	start-stop-daemon -K -p "$PIDFILE" 2>/dev/null
+	;;
+restart|reload)
+	"$0" stop
+	"$0" start
+	;;
+esac

@@ -1,0 +1,29 @@
+#!/bin/sh
+#
+# Start Bluetooth and reconnect the saved controller. Pairing is a one-time
+# step with orbit-bt-pair; after that the MAC in controller.conf is trusted.
+
+case "$1" in
+start)
+	[ -x /usr/bin/bluetoothctl ] || exit 0
+
+	if ! pidof bluetoothd >/dev/null 2>&1; then
+		/usr/bin/bluetoothd &
+		sleep 1
+	fi
+
+	[ -f /etc/orbit/controller.conf ] || exit 0
+	. /etc/orbit/controller.conf
+	[ -n "$MAC" ] || exit 0
+
+	bluetoothctl <<-EOF >/dev/null 2>&1
+	power on
+	agent NoInputNoOutput
+	default-agent
+	trust $MAC
+	connect $MAC
+	EOF
+	;;
+stop)
+	;;
+esac
