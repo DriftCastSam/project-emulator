@@ -1,1 +1,3 @@
+source "$BR2_EXTERNAL_ORBIT_PATH/package/cc65/Config.in.host"
 source "$BR2_EXTERNAL_ORBIT_PATH/package/orbit-console/Config.in"
+source "$BR2_EXTERNAL_ORBIT_PATH/package/orbit-rom-nova/Config.in"

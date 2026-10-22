@@ -25,13 +25,25 @@ os/            Buildroot defconfig and rootfs overlay
 scripts/       host-side helpers
 ```
 
-## Build (planned)
+## Build
 
 ```bash
+git clone --recurse-submodules <repo>
 make hw        # Vivado: bitstream + XSA
 make os        # Buildroot: SD image
 make sw        # emulator for ARM
 ```
+
+## Games
+
+The image ships **Nova the Squirrel**, built from the
+[upstream source](https://github.com/NovaSquirrel/NovaTheSquirrel) that is
+pinned as a submodule in `third_party/`. Code is GPLv3, assets are
+CC BY-NC-SA 4.0; see `THIRD_PARTY.md`.
+
+Your own ROMs go in `roms/`, which is gitignored. `make os` copies them into
+the image and the console boots the first one alphabetically. Do not commit
+commercial ROMs; dumping and using them is your responsibility.
 
 ## License
 

@@ -1,0 +1,7 @@
+config BR2_PACKAGE_ORBIT_ROM_NOVA
+	bool "Nova the Squirrel ROM"
+	depends on BR2_PACKAGE_HOST_CC65
+	help
+	  Build the bundled Nova the Squirrel NES ROM and install it in
+	  /roms. Source: third_party/NovaTheSquirrel, GPLv3 code with
+	  CC BY-NC-SA assets.

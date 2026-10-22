@@ -1,0 +1,5 @@
+config BR2_PACKAGE_HOST_CC65
+	bool "host cc65"
+	help
+	  The cc65 6502 toolchain, built for the host. Used at image build
+	  time to assemble the bundled NES ROM.
