@@ -61,9 +61,10 @@ The serial clock uses a BUFIO, as the OSERDESE2 requires.
 
 ## Boot
 
-Boot mode jumper: SD. `BOOT.BIN` must contain FSBL, bitstream, and U-Boot, in
-that order. The bitstream is what configures the video path, so the console
-shows video as soon as U-Boot loads the FPGA (before Linux).
+Boot mode jumper: SD. `BOOT.BIN` is FSBL + bitstream + U-Boot. The FSBL is
+generated from our XSA, so its `ps7_init` matches this board's DDR, clocks,
+and MIO, and it programs the PL before U-Boot runs. This replaces the ZedBoard
+SPL, which hangs before UART on PYNQ-Z2.
 
 ## Power
 

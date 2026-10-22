@@ -30,9 +30,15 @@ sudo dd if=os/output/images/sdcard.img of=/dev/sdX bs=4M status=progress conv=fs
 ## Boot
 
 1. Put the SD card in, set the boot jumper to SD, connect UART and HDMI.
-2. Power on. U-Boot loads the bitstream, then the kernel.
+2. Power on. The FSBL inside `BOOT.BIN` configures the PL from the bitstream
+   partition, then starts U-Boot. U-Boot loads the kernel and DTB.
 3. The console starts `orbit-nes` with the first `/roms/*.nes`, or `fbdemo`
    if there is no ROM.
+
+`BOOT.BIN` is FSBL + bitstream + U-Boot, built from the XSA by
+`os/scripts/build_boot_bin.sh`. It uses the PYNQ-Z2 `ps7_init` (DDR, clocks,
+MIO), not the ZedBoard SPL. The post-build step runs the script if
+`hw/build/BOOT.BIN` is missing; Vitis (`xsct`, `bootgen`) must be installed.
 
 Serial console: `ttyPS0`, 115200 8N1.
 
@@ -64,9 +70,9 @@ as `/dev/input/event*`; the emulator reads evdev directly.
 
 These are the parts that need a board to confirm:
 
-- **SPL DDR init.** U-Boot uses the `zynq_zed` board configuration. PYNQ-Z2
-  and ZedBoard both have 512 MB of 32-bit DDR3, but if the board does not
-  boot, the DDR settings in `board/xilinx/zynq/` are the first thing to check.
+- **FSBL DDR init.** The FSBL comes from our XSA, so the DDR settings match
+  the PYNQ-Z2. If the board is still silent, check that `BOOT.BIN` is the one
+  built by `os/scripts/build_boot_bin.sh`.
 - **USB PHY.** The device tree uses the ZedBoard-style `usb-nop-xceiv` node.
   PYNQ-Z2 has a ULPI PHY; if the dongle is not detected, switch to the
   `ulpi-phy` node from TUL's reference tree.
