@@ -10,6 +10,7 @@
 | PL clock | 125 MHz single-ended |
 | HDMI out | 3 TMDS data lanes + clock, driven directly from PL |
 | USB | one USB 2.0 host port on the PS |
+| Console UART | PS UART1, MIO 48/49, 115200 8N1, on the micro-USB bridge |
 | Audio | ADAU1761 codec (I2C control, I2S data) |
 | Storage | microSD |
 | Buttons/LEDs | 4 buttons, 4 LEDs, 2 switches, 2 RGB LEDs |
@@ -60,6 +61,10 @@ a RAMB array that spans clock regions, and a regional BUFR cannot drive it.
 The serial clock uses a BUFIO, as the OSERDESE2 requires.
 
 ## Boot
+
+The TUL board preset enables PS UART0 and disables UART1, but the USB-UART
+bridge is wired to UART1. The build overrides the preset to enable UART1 on
+MIO 48/49; without it the FSBL, U-Boot and Linux console are all silent.
 
 Boot mode jumper: SD. `BOOT.BIN` is FSBL + bitstream + U-Boot. The FSBL is
 generated from our XSA, so its `ps7_init` matches this board's DDR, clocks,
