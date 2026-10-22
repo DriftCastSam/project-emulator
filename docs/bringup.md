@@ -31,5 +31,9 @@ Third build, after the swap counter and boot path:
   raw bin with `fpga load`.
 - Userspace: `fbdemo` builds; `orbit-nes` runs a synthetic NROM and writes a
   valid 256x240 PPM (host test).
-- Buildroot: toolchain, kernel, rootfs and U-Boot build; the image assembly
-  is running. U-Boot needed a host `dd` fix for the Zynq SPL align step.
+- Buildroot: image built. `sdcard.img` is 257 MB (64 MB FAT boot + 192 MB
+  ext4 rootfs). The boot partition has SPL, U-Boot, uImage, DTB, the raw
+  bitstream and boot.scr. The rootfs has the ARM `orbit-nes` (140 KB),
+  `fbdemo`, the UIO/DT nodes, and the Bluetooth/console init scripts.
+- U-Boot needed a host `dd` fix for the Zynq SPL align step.
+- Everything above is host-side verification; nothing has run on a board.

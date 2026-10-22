@@ -7,7 +7,7 @@
 set -e
 
 BOARD_DIR="$(dirname "$0")"
-ORBIT_ROOT="$(cd "$BOARD_DIR/../../.." && pwd)"
+ORBIT_ROOT="$(cd "$BOARD_DIR/../../../.." && pwd)"
 
 "${HOST_DIR}/bin/mkimage" -C none -A arm -T script \
 	-d "${BOARD_DIR}/boot.cmd" "${BINARIES_DIR}/boot.scr"
