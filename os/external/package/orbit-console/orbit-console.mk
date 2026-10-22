@@ -16,6 +16,7 @@ define ORBIT_CONSOLE_BUILD_CMDS
 		CPPFLAGS="$(TARGET_CPPFLAGS)"
 	if [ -d $(@D)/nes ]; then \
 		$(MAKE) -C $(@D)/nes \
+			CC="$(TARGET_CC)" CFLAGS="$(TARGET_CFLAGS)" \
 			CXX="$(TARGET_CXX)" CXXFLAGS="$(TARGET_CXXFLAGS)"; \
 	fi
 endef
