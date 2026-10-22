@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # Build BOOT.BIN for the PYNQ-Z2: FSBL + bitstream + U-Boot.
 #
