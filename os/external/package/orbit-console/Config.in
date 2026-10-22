@@ -1,0 +1,7 @@
+config BR2_PACKAGE_ORBIT_CONSOLE
+	bool "orbit-console"
+	depends on BR2_INSTALL_LIBSTDCPP
+	help
+	  The Orbit console userspace: the framebuffer demo and the headless
+	  NES frontend. Both talk to the PL through UIO and a reserved DDR
+	  frame buffer.

@@ -279,6 +279,7 @@ module orbit_video (
     reg [31:0] fb_stride;
     reg [31:0] scratch;
     reg [31:0] frame_count;
+    reg [15:0] swap_count;
 
     reg        mmcm_locked_q;
     reg        vsync_q;
@@ -362,7 +363,7 @@ module orbit_video (
                     4'h3: rdata_r <= fb_addr;
                     4'h4: rdata_r <= fb_stride;
                     4'h5: rdata_r <= 32'd0;
-                    4'h6: rdata_r <= {29'd0, dma_error, dma_done, dma_busy};
+                    4'h6: rdata_r <= {swap_count, 13'd0, dma_error, dma_done, dma_busy};
                     4'h7: rdata_r <= scratch;
                     default: rdata_r <= 32'd0;
                 endcase
@@ -421,6 +422,7 @@ module orbit_video (
     end
 
     reg [2:0] toggle_sync;
+    reg [2:0] swap_sync;
     reg       mmcm_locked_s;
     reg       vsync_s;
     reg       display_ready_s;
@@ -428,6 +430,8 @@ module orbit_video (
     always @(posedge s_axi_aclk or negedge s_axi_aresetn) begin
         if (!s_axi_aresetn) begin
             toggle_sync     <= 3'b000;
+            swap_sync       <= 3'b000;
+            swap_count      <= 16'd0;
             mmcm_locked_s   <= 1'b0;
             vsync_s         <= 1'b0;
             display_ready_s <= 1'b0;
@@ -437,6 +441,9 @@ module orbit_video (
             frame_count     <= 32'd0;
         end else begin
             toggle_sync     <= {toggle_sync[1:0], frame_toggle};
+            swap_sync       <= {swap_sync[1:0], swap_toggle};
+            if (swap_sync[2] ^ swap_sync[1])
+                swap_count <= swap_count + 16'd1;
             mmcm_locked_s   <= mmcm_locked;
             vsync_s         <= vsync;
             display_ready_s <= display_ready;
@@ -466,6 +473,7 @@ module orbit_video (
 
     reg        fb_bank;
     reg        swap_pending;
+    reg        swap_toggle;
 
     // done toggle -> pixel domain
     reg [2:0] done_sync;
@@ -475,6 +483,7 @@ module orbit_video (
             fb_bank      <= 1'b0;
             display_ready <= 1'b0;
             swap_pending <= 1'b0;
+            swap_toggle  <= 1'b0;
         end else begin
             done_sync <= {done_sync[1:0], done_toggle};
             if (done_sync[2] ^ done_sync[1])
@@ -483,6 +492,7 @@ module orbit_video (
                 fb_bank       <= ~fb_bank;
                 display_ready <= 1'b1;
                 swap_pending  <= 1'b0;
+                swap_toggle   <= ~swap_toggle;
             end
         end
     end

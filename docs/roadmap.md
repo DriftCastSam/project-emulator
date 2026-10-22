@@ -4,6 +4,9 @@ Each milestone is a mergeable slice with an acceptance test. Hardware
 milestones are not done until the bitstream closes timing; software milestones
 are not done until they run on the board.
 
+Status: M0-M2 are done and verified on the host. M3-M4 are implemented and
+configured but not yet run on a board.
+
 ## M0: foundation
 
 - Repo layout, contributing rules, architecture, ADRs.

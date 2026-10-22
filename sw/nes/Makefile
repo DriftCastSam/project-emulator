@@ -1,19 +1,26 @@
 SHELL := /bin/bash
+
 CXX ?= g++
+CC  ?= gcc
 CXXFLAGS ?= -O2 -std=c++14
+CFLAGS   ?= -O2 -std=c11 -D_POSIX_C_SOURCE=200809L
 WARN := -Wall -Wextra -Wno-unused-value -Wno-multichar
-CPPFLAGS := -Iinclude -Ivendor/laines/src/include -Ivendor/laines/lib/include
+CPPFLAGS := -Iinclude -I../console/include \
+            -Ivendor/laines/src/include -Ivendor/laines/lib/include
 
 BUILD := build
 BIN   := $(BUILD)/orbit-nes
+THREAD := -pthread
 
 CORE_SRC := $(wildcard vendor/laines/src/*.cpp) \
             $(wildcard vendor/laines/src/mappers/*.cpp) \
             $(wildcard vendor/laines/lib/*.cpp)
-FE_SRC   := src/gui.cpp src/frame_sink.cpp src/main.cpp
-SRC      := $(CORE_SRC) $(FE_SRC)
+FE_SRC   := src/gui.cpp src/frame_sink.cpp src/fb_sink.cpp src/input.cpp src/main.cpp
+FB_SRC   := ../console/src/fb.c
+
 CORE_OBJ := $(patsubst %.cpp,$(BUILD)/obj/%.o,$(CORE_SRC))
 FE_OBJ   := $(patsubst %.cpp,$(BUILD)/obj/%.o,$(FE_SRC))
+FB_OBJ   := $(BUILD)/obj/fb.o
 
 .PHONY: all orbit-nes test clean
 
@@ -21,8 +28,8 @@ all: $(BIN)
 
 orbit-nes: $(BIN)
 
-$(BIN): $(CORE_OBJ) $(FE_OBJ)
-	$(CXX) $(CXXFLAGS) -o $@ $^
+$(BIN): $(CORE_OBJ) $(FE_OBJ) $(FB_OBJ)
+	$(CXX) $(CXXFLAGS) $(THREAD) -o $@ $^
 
 # Vendored sources are kept byte-identical to upstream, so their warnings are
 # not ours to fix.
@@ -32,7 +39,11 @@ $(CORE_OBJ): $(BUILD)/obj/%.o: %.cpp
 
 $(FE_OBJ): $(BUILD)/obj/%.o: %.cpp
 	@mkdir -p $(dir $@)
-	$(CXX) $(CXXFLAGS) $(WARN) $(CPPFLAGS) -c -o $@ $<
+	$(CXX) $(CXXFLAGS) $(THREAD) $(WARN) $(CPPFLAGS) -c -o $@ $<
+
+$(FB_OBJ): $(FB_SRC)
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
 
 test: $(BIN)
 	@mkdir -p $(BUILD)
