@@ -11,6 +11,7 @@ BR_TARBALL  = buildroot-$(BR_VERSION).tar.xz
 BR_URL      = https://buildroot.org/downloads/$(BR_TARBALL)
 BR_DIR      = buildroot
 OUT         = $(CURDIR)/output
+ORBIT_ROMS_DIR ?= $(CURDIR)/../roms
 
 .PHONY: all defconfig image menuconfig clean distclean
 
@@ -27,7 +28,7 @@ defconfig: $(BR_DIR)/Makefile
 		BR2_EXTERNAL=$(CURDIR)/external orbit_pynq_z2_defconfig
 
 image: defconfig
-	$(MAKE) -C $(BR_DIR) O=$(OUT)
+	ORBIT_ROMS_DIR=$(ORBIT_ROMS_DIR) $(MAKE) -C $(BR_DIR) O=$(OUT)
 
 menuconfig: defconfig
 	$(MAKE) -C $(BR_DIR) O=$(OUT) menuconfig

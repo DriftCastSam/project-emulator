@@ -36,10 +36,18 @@ sudo dd if=os/output/images/sdcard.img of=/dev/sdX bs=4M status=progress conv=fs
 
 Serial console: `ttyPS0`, 115200 8N1.
 
-## ROMs and controller
+## ROMs
 
-Copy ROMs to `/roms` on the rootfs partition (mount it on a Linux host, or
-use `scp` once the network is up).
+The image builds and installs **Nova the Squirrel** from the submodule at
+`third_party/NovaTheSquirrel`.
+
+For anything else, put `.nes` files in the repo's `roms/` directory before
+`make os`; it is gitignored and copied into `/roms`. The console boots the
+first file alphabetically, so name the one you want first, for example
+`legend-of-zelda.nes`.
+
+Commercial ROMs are not part of this repository. Dump and use your own
+cartridges; do not commit them.
 
 Pair an 8BitDo once:
 
