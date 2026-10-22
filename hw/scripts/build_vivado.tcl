@@ -37,13 +37,12 @@ apply_bd_automation -rule xilinx.com:bd_rule:processing_system7 \
 
 set_property -dict [list CONFIG.PCW_USE_S_AXI_HP0 {1}] [get_bd_cells ps7]
 
-# The TUL board preset enables PS UART0 and disables UART1, but the PYNQ-Z2
-# USB-UART bridge is wired to UART1 (MIO 48/49). Override it so the FSBL,
-# U-Boot and Linux console all land on the port that exists.
+# The PYNQ-Z2 USB-UART bridge is PS UART0 on MIO 14/15 (reference manual,
+# section 12). Be explicit so the FSBL, U-Boot and Linux all use it.
 set_property -dict [list \
-    CONFIG.PCW_UART0_PERIPHERAL_ENABLE {0} \
-    CONFIG.PCW_UART1_PERIPHERAL_ENABLE {1} \
-    CONFIG.PCW_UART1_UART1_IO {MIO 48 .. 49} \
+    CONFIG.PCW_UART0_PERIPHERAL_ENABLE {1} \
+    CONFIG.PCW_UART0_UART0_IO {MIO 14 .. 15} \
+    CONFIG.PCW_UART1_PERIPHERAL_ENABLE {0} \
 ] [get_bd_cells ps7]
 
 create_bd_cell -type module -reference orbit_video video
