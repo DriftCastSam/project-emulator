@@ -36,4 +36,15 @@ Third build, after the swap counter and boot path:
   bitstream and boot.scr. The rootfs has the ARM `orbit-nes` (140 KB),
   `fbdemo`, the UIO/DT nodes, and the Bluetooth/console init scripts.
 - U-Boot needed a host `dd` fix for the Zynq SPL align step.
-- Everything above is host-side verification; nothing has run on a board.
+- Everything above is host-side verification.
+
+First board session:
+
+- SD flashed, 12 V applied, HDMI connected, UART bridge detected as an FTDI
+  FT2232H (Xilinx TUL), two `ttyUSB` ports.
+- No UART output, DONE LED off after power-on. The ZedBoard SPL does not
+  initialize this board's DDR correctly, so the boot stops before U-Boot.
+- Switched to a PYNQ-Z2 FSBL generated from `orbit.xsa`: `BOOT.BIN` is FSBL +
+  bitstream + U-Boot (5.2 MB), and the FSBL programs the PL. The boot script
+  no longer loads the bitstream.
+- Image rebuilt with the new boot partition; awaiting reflash.

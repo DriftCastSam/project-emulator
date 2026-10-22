@@ -1,8 +1,9 @@
 #!/bin/sh
 #
-# Build the U-Boot boot script and place the bitstream where genimage can
-# find it. The bitstream comes from `make hw`; override the path with
-# ORBIT_BITSTREAM if it lives elsewhere.
+# Assemble the boot files and copy ROMs into the rootfs.
+#
+# BOOT.BIN is FSBL + bitstream + U-Boot, built from the XSA so the FSBL uses
+# this board's ps7_init and programs the PL before U-Boot starts.
 
 set -e
 
@@ -14,15 +15,13 @@ ROMS_DIR="${ORBIT_ROMS_DIR:-${ORBIT_ROOT}/roms}"
 "${HOST_DIR}/bin/mkimage" -C none -A arm -T script \
 	-d "${BOARD_DIR}/boot.cmd" "${BINARIES_DIR}/boot.scr"
 
-BITSTREAM="${ORBIT_BITSTREAM:-${ORBIT_ROOT}/hw/build/orbit.bin}"
+BOOTBIN="${ORBIT_BOOT_BIN:-${ORBIT_ROOT}/hw/build/BOOT.BIN}"
 
-if [ ! -f "$BITSTREAM" ]; then
-	echo "ERROR: no raw bitstream at $BITSTREAM" >&2
-	echo "       run 'make hw' first, or set ORBIT_BITSTREAM" >&2
-	exit 1
+if [ ! -f "$BOOTBIN" ]; then
+	"${ORBIT_ROOT}/os/scripts/build_boot_bin.sh"
 fi
 
-install -m 0644 "$BITSTREAM" "${BINARIES_DIR}/system.bin"
+install -m 0644 "$BOOTBIN" "${BINARIES_DIR}/BOOT.BIN"
 
 # Bring-your-own ROMs. Nothing here is committed: roms/ is gitignored, and
 # commercial ROMs are the builder's responsibility.
