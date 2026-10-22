@@ -105,6 +105,9 @@ report_timing_summary -file [file join $build_dir timing_summary.rpt]
 report_utilization    -file [file join $build_dir utilization.rpt]
 report_clock_utilization -file [file join $build_dir clock_utilization.rpt]
 
+# A raw .bin for U-Boot's `fpga load`, next to the .bit for JTAG.
+write_bitstream -force -bin_file [file join $build_dir orbit.bit]
+
 write_hw_platform -fixed -include_bit -force [file join $build_dir orbit.xsa]
 
 puts "BUILD OK"

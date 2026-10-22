@@ -120,11 +120,13 @@ int orbit_fb_wait_frame(struct orbit_fb *fb, int timeout_ms)
     if (!fb)
         return -1;
 
-    uint32_t start = reg_read(fb, ORBIT_REG_STATUS) >> ORBIT_STATUS_FRAME_SHIFT;
+    // The swap counter only moves after a copy has completed and the bank
+    // has been swapped in, so returning here means the DDR buffer is free.
+    uint32_t start = reg_read(fb, ORBIT_REG_DMA_STATUS) >> 16;
     uint64_t deadline = now_ms() + (uint64_t)timeout_ms;
 
     while (now_ms() <= deadline) {
-        uint32_t now = reg_read(fb, ORBIT_REG_STATUS) >> ORBIT_STATUS_FRAME_SHIFT;
+        uint32_t now = reg_read(fb, ORBIT_REG_DMA_STATUS) >> 16;
         if (now != start)
             return 0;
         struct timespec nap = {0, 1000000};

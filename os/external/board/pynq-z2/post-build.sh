@@ -12,7 +12,7 @@ ORBIT_ROOT="$(cd "$BOARD_DIR/../../.." && pwd)"
 "${HOST_DIR}/bin/mkimage" -C none -A arm -T script \
 	-d "${BOARD_DIR}/boot.cmd" "${BINARIES_DIR}/boot.scr"
 
-BITSTREAM="${ORBIT_BITSTREAM:-${ORBIT_ROOT}/hw/build/vivado/orbit.runs/impl_1/system_wrapper.bin}"
+BITSTREAM="${ORBIT_BITSTREAM:-${ORBIT_ROOT}/hw/build/orbit.bin}"
 
 if [ ! -f "$BITSTREAM" ]; then
 	echo "ERROR: no raw bitstream at $BITSTREAM" >&2
