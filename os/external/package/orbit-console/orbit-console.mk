@@ -11,10 +11,13 @@ ORBIT_CONSOLE_LICENSE = MIT
 ORBIT_CONSOLE_DEPENDENCIES =
 
 define ORBIT_CONSOLE_BUILD_CMDS
+	# The local source method copies host build output; start clean so
+	# nothing built for the host is linked into the target binary.
+	$(MAKE) -C $(@D)/console clean
 	$(MAKE) -C $(@D)/console \
-		CC="$(TARGET_CC)" CFLAGS="$(TARGET_CFLAGS)" \
-		CPPFLAGS="$(TARGET_CPPFLAGS)"
+		CC="$(TARGET_CC)" CFLAGS="$(TARGET_CFLAGS)"
 	if [ -d $(@D)/nes ]; then \
+		$(MAKE) -C $(@D)/nes clean; \
 		$(MAKE) -C $(@D)/nes \
 			CC="$(TARGET_CC)" CFLAGS="$(TARGET_CFLAGS)" \
 			CXX="$(TARGET_CXX)" CXXFLAGS="$(TARGET_CXXFLAGS)"; \

@@ -14,13 +14,16 @@ start)
 	ROM=$(ls /roms/*.nes 2>/dev/null | head -n 1)
 
 	if [ -n "$ROM" ] && [ -x "$DAEMON" ]; then
-		start-stop-daemon -S -b -m -p "$PIDFILE" -x "$DAEMON" -- "$ROM"
+		"$DAEMON" "$ROM" >/var/log/console.log 2>&1 &
+		echo $! > "$PIDFILE"
 	elif [ -x "$DEMO" ]; then
-		start-stop-daemon -S -b -m -p "$PIDFILE" -x "$DEMO"
+		"$DEMO" >/var/log/console.log 2>&1 &
+		echo $! > "$PIDFILE"
 	fi
 	;;
 stop)
-	start-stop-daemon -K -p "$PIDFILE" 2>/dev/null
+	[ -f "$PIDFILE" ] && kill "$(cat "$PIDFILE")" 2>/dev/null
+	rm -f "$PIDFILE"
 	;;
 restart|reload)
 	"$0" stop
