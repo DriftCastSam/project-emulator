@@ -1,0 +1,4 @@
+[submodule "third_party/NovaTheSquirrel"]
+	path = third_party/NovaTheSquirrel
+	url = https://github.com/NovaSquirrel/NovaTheSquirrel
+	branch = master

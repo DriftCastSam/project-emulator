@@ -1,5 +1,5 @@
 SHELL := /bin/bash
-VIVADO_SETTINGS ?= /tools/Xilinx/2025.2/settings64.sh
+VIVADO_SETTINGS ?= /tools/Xilinx/2025.2/Vivado/settings64.sh
 VERILATOR ?= verilator
 
 RTL  := $(wildcard hw/rtl/*.v hw/rtl/**/*.v)
