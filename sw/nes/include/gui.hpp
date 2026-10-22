@@ -28,6 +28,7 @@ void new_samples(const blip_sample_t* samples, size_t count);
 
 // Controller state in NES shift-register order (bit 0 = A).
 u8 get_joypad_state(int n);
+void set_joypad_state(u8 state);
 
 // No fast-forward in the headless build.
 bool is_fast_forward();

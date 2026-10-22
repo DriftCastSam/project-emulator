@@ -13,6 +13,10 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define ORBIT_FB_WIDTH  256
 #define ORBIT_FB_HEIGHT 240
 #define ORBIT_FB_PIXELS (ORBIT_FB_WIDTH * ORBIT_FB_HEIGHT)
@@ -77,5 +81,9 @@ static inline uint16_t orbit_argb_to_565(uint32_t argb)
     return orbit_rgb565((uint8_t)(argb >> 16), (uint8_t)(argb >> 8),
                         (uint8_t)argb);
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
