@@ -96,7 +96,9 @@ Two 256x240 RGB565 banks live in BRAM (about 60 BRAM36 total), dual clocked:
 The copy engine is a read-only AXI4 master on HP0. It pulls 120 KiB with
 64-bit bursts and unpacks one pixel per clock, about 0.8 ms per frame. It
 always writes the bank that is not on screen; the display swaps banks at the
-next frame start, so there is no tearing.
+next frame start, so there is no tearing. The swap count in `DMA_STATUS` lets
+userspace know when the DDR buffer is free again, which is also the frame
+pacing.
 
 Two producers can fill a bank:
 
@@ -134,7 +136,7 @@ PL AXI-Lite register map, 4 KiB:
 | 0x00C | FB_ADDR | DDR physical address of the software framebuffer |
 | 0x010 | FB_STRIDE | bytes per line (512) |
 | 0x014 | DMA_CTRL | [0] start copy (latches FB_ADDR) |
-| 0x018 | DMA_STATUS | [0] busy, [1] done, [2] error |
+| 0x018 | DMA_STATUS | [0] busy, [1] done, [2] error, [31:16] swap count |
 | 0x01C | SCRATCH | read/write test register |
 | 0x100+ | PPU | PPU register mirror (phase 5) |
 
@@ -197,8 +199,10 @@ LaiNES is vendored in `sw/nes` (BSD-2). It is small, splits CPU/PPU/APU, and
 its PPU is easy to replace. Modifications:
 
 - headless core API, no SDL, no GUI
-- video backend writes RGB565 to the reserved framebuffer
-- input backend reads evdev (8BitDo over BT, USB keyboard fallback)
+- video backend (`FbSink`) writes RGB565 through UIO and the reserved
+  framebuffer, and blocks on the display swap
+- input backend (`Input`) reads evdev, scans for a gamepad, and maps 8BitDo
+  XInput buttons and hat/sticks to the NES shift-register byte
 - audio backend writes ALSA (phase 4)
 - optional hardware PPU backend behind `--ppu=hw`
 

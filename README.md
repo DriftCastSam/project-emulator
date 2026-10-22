@@ -10,8 +10,10 @@ The result is a cartridge-less NES-class console: SD card for ROMs, Bluetooth
 8BitDo controller over a USB dongle, HDMI to the TV, and a stripped Linux image
 that boots straight into the emulator.
 
-Status: early. The architecture and roadmap are in [`docs/`](docs/). Nothing
-runs on hardware yet.
+Status: the video pipeline, framebuffer path, userspace and headless
+emulator are built and tested on the host. The Linux image is configured and
+building. Nothing has run on a board yet; see
+[`docs/bringup.md`](docs/bringup.md) for exactly what was verified.
 
 ## Repository layout
 
