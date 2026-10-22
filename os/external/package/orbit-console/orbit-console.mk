@@ -22,8 +22,8 @@ endef
 
 define ORBIT_CONSOLE_INSTALL_TARGET_CMDS
 	$(INSTALL) -D -m 0755 $(@D)/console/fbdemo $(TARGET_DIR)/usr/bin/fbdemo
-	if [ -x $(@D)/nes/orbit-nes ]; then \
-		$(INSTALL) -D -m 0755 $(@D)/nes/orbit-nes \
+	if [ -x $(@D)/nes/build/orbit-nes ]; then \
+		$(INSTALL) -D -m 0755 $(@D)/nes/build/orbit-nes \
 			$(TARGET_DIR)/usr/bin/orbit-nes; \
 	fi
 endef
