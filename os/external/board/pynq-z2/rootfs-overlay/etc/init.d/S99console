@@ -2,28 +2,58 @@
 #
 # The console owns the display. If a ROM is on the card, start the emulator;
 # otherwise run the framebuffer demo so the video path is still exercised.
+#
+# Everything goes to /var/log/console.log, and the stage lines also go to the
+# serial console so a boot that never reaches a shell can still be diagnosed.
 
 DAEMON=/usr/bin/orbit-nes
 DEMO=/usr/bin/fbdemo
 PIDFILE=/var/run/console.pid
+LOG=/var/log/console.log
 
-case "$1" in
-start)
+start()
+{
 	mkdir -p /roms /var/log
+	: > "$LOG"
 
 	ROM=$(ls /roms/*.nes 2>/dev/null | head -n 1)
 
 	if [ -n "$ROM" ] && [ -x "$DAEMON" ]; then
-		"$DAEMON" "$ROM" >/var/log/console.log 2>&1 &
-		echo $! > "$PIDFILE"
-	elif [ -x "$DEMO" ]; then
-		"$DEMO" >/var/log/console.log 2>&1 &
-		echo $! > "$PIDFILE"
+		echo "orbit: starting $ROM"
+		# --fb keeps a missing UIO node or DDR buffer an error instead of
+		# falling back to a null sink that leaves the test pattern up.
+		"$DAEMON" --fb "$ROM" >>"$LOG" 2>&1 &
+		pid=$!
+		echo "$pid" > "$PIDFILE"
+
+		# The first frame is the point where a dead video path shows up.
+		sleep 1
+		if kill -0 "$pid" 2>/dev/null; then
+			return 0
+		fi
+		echo "orbit: emulator exited, see $LOG"
+		rm -f "$PIDFILE"
 	fi
-	;;
-stop)
+
+	if [ -x "$DEMO" ]; then
+		echo "orbit: running the framebuffer demo"
+		"$DEMO" >>"$LOG" 2>&1 &
+		echo "$!" > "$PIDFILE"
+	fi
+}
+
+stop()
+{
 	[ -f "$PIDFILE" ] && kill "$(cat "$PIDFILE")" 2>/dev/null
 	rm -f "$PIDFILE"
+}
+
+case "$1" in
+start)
+	start
+	;;
+stop)
+	stop
 	;;
 restart|reload)
 	"$0" stop

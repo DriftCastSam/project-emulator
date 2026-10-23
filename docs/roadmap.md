@@ -5,7 +5,8 @@ milestones are not done until the bitstream closes timing; software milestones
 are not done until they run on the board.
 
 Status: M0-M2 are done and verified on the host. M3-M4 are implemented and
-configured but not yet run on a board.
+configured but not yet run on a board. On the board, M1 is confirmed (the test
+pattern shows); the rest of the video path is not.
 
 ## M0: foundation
 

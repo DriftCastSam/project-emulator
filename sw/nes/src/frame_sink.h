@@ -12,6 +12,10 @@ class FrameSink
 
     // Pixels are RGB565, row-major, w*h entries.
     virtual void push(const uint16_t* rgb565, int w, int h) = 0;
+
+    // True once the backend has given up, so the frontend can exit instead of
+    // spinning on a display that will never update.
+    virtual bool failed() const { return false; }
 };
 
 class NullSink : public FrameSink

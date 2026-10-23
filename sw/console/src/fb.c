@@ -44,6 +44,9 @@ struct orbit_fb *orbit_fb_open(const char *uio_path, const char *mem_path,
     if (!fb)
         return NULL;
 
+    // calloc leaves these zero, and fd 0 is a real file descriptor.
+    fb->uio_fd = -1;
+    fb->mem_fd = -1;
     fb->regs_len = 0x1000;
     fb->mem_len = ORBIT_FB_BYTES;
 
@@ -56,7 +59,19 @@ struct orbit_fb *orbit_fb_open(const char *uio_path, const char *mem_path,
     fb->regs = mmap(NULL, fb->regs_len, PROT_READ | PROT_WRITE, MAP_SHARED,
                     fb->uio_fd, 0);
     if (fb->regs == MAP_FAILED) {
+        fb->regs = NULL;
         perror("mmap uio");
+        goto fail;
+    }
+
+    // The ID is the cheapest end-to-end check: it proves the PS can reach the
+    // register block in the bitstream that is actually loaded.
+    uint32_t id = reg_read(fb, ORBIT_REG_ID);
+    if (id != ORBIT_ID_VALUE) {
+        fprintf(stderr,
+                "orbit-fb: no video registers at %s (ID 0x%08x, want 0x%08x);"
+                " is the bitstream loaded?\n",
+                uio_path, id, ORBIT_ID_VALUE);
         goto fail;
     }
 
@@ -69,6 +84,7 @@ struct orbit_fb *orbit_fb_open(const char *uio_path, const char *mem_path,
     fb->mem = mmap(NULL, fb->mem_len, PROT_READ | PROT_WRITE, MAP_SHARED,
                    fb->mem_fd, (off_t)fb_phys);
     if (fb->mem == MAP_FAILED) {
+        fb->mem = NULL;
         perror("mmap fb");
         goto fail;
     }
@@ -83,6 +99,46 @@ struct orbit_fb *orbit_fb_open(const char *uio_path, const char *mem_path,
 fail:
     orbit_fb_close(fb);
     return NULL;
+}
+
+int orbit_fb_probe(struct orbit_fb *fb, struct orbit_fb_info *info)
+{
+    if (!fb)
+        return -1;
+
+    info->id         = reg_read(fb, ORBIT_REG_ID);
+    info->ctrl       = reg_read(fb, ORBIT_REG_CTRL);
+    info->status     = reg_read(fb, ORBIT_REG_STATUS);
+    info->fb_addr    = reg_read(fb, ORBIT_REG_FB_ADDR);
+    info->fb_stride  = reg_read(fb, ORBIT_REG_FB_STRIDE);
+    info->dma_status = reg_read(fb, ORBIT_REG_DMA_STATUS);
+
+    // SCRATCH is the only read/write register, so it is the one that can tell
+    // a working bus from a one-way one.
+    reg_write(fb, ORBIT_REG_SCRATCH, ORBIT_SCRATCH_MAGIC);
+    info->scratch = reg_read(fb, ORBIT_REG_SCRATCH);
+
+    return info->id == ORBIT_ID_VALUE &&
+                   info->scratch == ORBIT_SCRATCH_MAGIC
+               ? 0
+               : -1;
+}
+
+void orbit_fb_info_string(const struct orbit_fb_info *info, char *out,
+                          size_t len)
+{
+    char id[5];
+    id[0] = (char)(info->id >> 24);
+    id[1] = (char)(info->id >> 16);
+    id[2] = (char)(info->id >> 8);
+    id[3] = (char)info->id;
+    id[4] = '\0';
+
+    snprintf(out, len,
+             "id=%s ctrl=0x%02x status=0x%08x fb=0x%08x stride=%u "
+             "dma=0x%08x scratch=0x%08x",
+             id, info->ctrl & 0xffu, info->status, info->fb_addr,
+             info->fb_stride, info->dma_status, info->scratch);
 }
 
 void orbit_fb_close(struct orbit_fb *fb)
@@ -144,4 +200,9 @@ uint32_t orbit_fb_frame_count(struct orbit_fb *fb)
 uint32_t orbit_fb_status(struct orbit_fb *fb)
 {
     return reg_read(fb, ORBIT_REG_STATUS);
+}
+
+uint32_t orbit_fb_dma_status(struct orbit_fb *fb)
+{
+    return reg_read(fb, ORBIT_REG_DMA_STATUS);
 }

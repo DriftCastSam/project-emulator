@@ -133,6 +133,10 @@ int main(int argc, char* argv[])
             sink->push(GUI::frame_rgb565(), (int)GUI::WIDTH, (int)GUI::HEIGHT);
             GUI::clear_frame_ready();
         }
+
+        if (sink->failed())
+            return 1;
+
         done++;
     }
 
