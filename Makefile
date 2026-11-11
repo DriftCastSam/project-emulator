@@ -4,7 +4,7 @@ VERILATOR ?= verilator
 
 RTL  := $(wildcard hw/rtl/*.v hw/rtl/**/*.v)
 TB   := $(wildcard hw/sim/*.sv)
-LINT := tmds_encoder video_timing test_pattern fb_dma
+LINT := tmds_encoder video_timing test_pattern fb_dma ppu_render
 
 .PHONY: help lint sim hw sw os clean
 
@@ -17,7 +17,7 @@ help:
 
 lint:
 	@for m in $(LINT); do \
-		$(VERILATOR) --lint-only -Wall -Wno-fatal --top-module $$m hw/rtl/$$m.v || exit 1; \
+		$(VERILATOR) --lint-only -Wall -Wno-fatal --top-module $$m $(RTL) || exit 1; \
 	done
 	@echo "lint clean"
 

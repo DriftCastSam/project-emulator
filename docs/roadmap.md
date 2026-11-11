@@ -56,6 +56,9 @@ Acceptance: Super Mario Bros. and Zelda run at full speed with working audio
 
 - 5a: CHR/NT/OAM/palette BRAM, background rendering, palette, scroll,
   mirroring, scanline-granularity register writes.
+  Done in simulation so far: the background renderer, palette and
+  mirroring match LaiNES pixel for pixel (`make sim`). Still to do: the loopy
+  register unit, OAM memory, and wiring into the framebuffer writer.
 - 5b: sprites, priority, sprite 0 hit, overflow, vblank timing.
 - 5c: dot-timestamped register writes.
 

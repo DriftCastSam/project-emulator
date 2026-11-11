@@ -162,11 +162,46 @@ each write at its timestamp, which preserves mid-scanline effects such as
 split-screen scrolling. Reads of `$2002` return flags sampled at the read
 timestamp.
 
-Phase 5a ignores timestamps and applies writes at scanline boundaries. That is
-enough for most games and much simpler to verify. Phase 5b turns on the
-timestamped path.
+Phase 5a ignores timestamps and works at scanline granularity. That is enough
+for most games and much simpler to verify. Phase 5c turns on the timestamped
+path (see `docs/roadmap.md`).
+
+**Scanline-granularity contract (5a).** The renderer draws one visible line
+from a snapshot of the line state, taken at dot 320 of the previous line, before
+the two prefetch tiles. Register writes made after dot 257 of a line and before
+dot 320 are therefore seen by the next line, and writes made during the visible
+part of a line are not seen until a later one. The snapshot is:
+
+| Field | Source |
+|---|---|
+| V (15 bits) | loopy V after the dot-257 horizontal copy, including the vertical copy on the pre-render line |
+| fine X | `$2005` first write |
+| bg pattern table | PPUCTRL bit 4 |
+| bg on, bg left column, gray | PPUMASK bits 3, 1, 0 |
+
+V is the raw loopy register `[14:12]` fine Y, `[11:10]` nametable, `[9:5]`
+coarse Y, `[4:0]` coarse X. Software drives the snapshot until the loopy
+register logic (`$2000`, `$2005`, `$2006`) moves into the PL; that unit is the
+next slice and is verified against `PPU::get_state` line by line.
+
+Not covered by 5a: mid-line mask or scroll changes, emphasis bits, sprites,
+four-screen mirroring (needs 4 KiB of nametable RAM), CHR bank switching
+during a frame (MMC3 and similar; needs a decision on whether the PS rewrites
+CHR or the PL gets bank registers), and reads or writes through `$2007`.
 
 ### 6.3 Rendering
+
+Implemented in `hw/rtl` as `ppu_render` (top), `ppu_bg` (fetch and pixel
+generation), `ppu_mem` (CHR RAM, nametable RAM, mirroring) and `ppu_pal`
+(palette RAM, aliasing, grayscale, RGB565 lookup through the generated
+`nes_pal_rom`). The 5a background renderer is tile-at-a-time, not dot-accurate:
+per tile it reads the nametable byte, attribute byte and two pattern bytes
+through one-cycle-latency ports, then emits 8 pixels; 33 tiles per line cover
+any fine X. A line takes 561 cycles, far inside the 5000 available at
+74.25 MHz, so it needs no overlap between fetch and output. Output is RGB565,
+matching the framebuffer contract (section 4.3). Mirroring: 0 vertical,
+1 horizontal, 2 one-screen upper, 3 one-screen lower.
+
 
 Per scanline:
 
@@ -244,6 +279,15 @@ BOOT.BIN (FSBL + bitstream + U-Boot)
 
 - **Verilator**: lint plus unit testbenches for timing generator, TMDS
   encoder, scaler, and PPU pixel pipeline. Runs in CI.
+- **PPU golden vectors**: `sw/nes/test/ppu_golden.cpp` drives the vendored
+  LaiNES PPU with no CPU, over seeded random memories and per-line register
+  writes, and records the line state and every output pixel. `tb_ppu_render`
+  replays the same memories and line state into the RTL and compares all
+  61,440 pixels per scenario. Eight scenarios cover all four mirroring modes,
+  scroll and nametable changes, coarse X wrap, mask toggles and palette
+  aliasing. The reference is LaiNES, not a real 2C02, so a bug LaiNES shares
+  with the RTL is not caught; compatibility ROMs on hardware are the check
+  for that.
 - **Vivado xsim**: anything that instantiates OSERDESE2 or MMCM.
 - **Vivado**: synthesis, implementation, timing report. WNS must be positive
   at 74.21875 MHz and 371.09375 MHz.
