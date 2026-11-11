@@ -4,8 +4,8 @@ Buildroot external tree for a stripped PYNQ-Z2 console image:
 
 - Linux 6.12 LTS with a PYNQ-Z2 device tree (ZedBoard peripherals plus a
   reserved frame buffer and a UIO node for the video registers).
-- U-Boot with SPL, booting `boot.scr` from the FAT partition and loading the
-  bitstream before Linux.
+- U-Boot proper, loaded by the FSBL. The SPL build is still enabled in the
+  defconfig but nothing flashes or runs it.
 - BusyBox, BlueZ, ALSA, libevdev, and the `orbit-console` package.
 - No X, no Python, no systemd.
 
@@ -13,13 +13,13 @@ Buildroot external tree for a stripped PYNQ-Z2 console image:
 
 ```bash
 make hw                 # from the repo root: bitstream + XSA
+os/scripts/build_boot_bin.sh   # FSBL + bitstream + U-Boot -> hw/build/BOOT.BIN
 make os                 # Buildroot: output/images/sdcard.img
 ```
 
 The first `make os` downloads Buildroot 2026.02.3 and about 1 GB of sources.
-The bitstream is taken from
-`hw/build/vivado/orbit.runs/impl_1/system_wrapper.bin`; set `ORBIT_BITSTREAM`
-to override it.
+`BOOT.BIN` must exist before `make os`; the post-build step builds it if it is
+missing.
 
 Write the image to an SD card:
 
@@ -32,8 +32,12 @@ sudo dd if=os/output/images/sdcard.img of=/dev/sdX bs=4M status=progress conv=fs
 1. Put the SD card in, set the boot jumper to SD, connect UART and HDMI.
 2. Power on. The FSBL inside `BOOT.BIN` configures the PL from the bitstream
    partition, then starts U-Boot. U-Boot loads the kernel and DTB.
-3. The console starts `orbit-nes` with the first `/roms/*.nes`, or `fbdemo`
-   if there is no ROM.
+3. `S99console` starts `orbit-nes --fb` with the first `/roms/*.nes`, or
+   `fbdemo` if there is no ROM or the emulator dies. Both write to
+   `/var/log/console.log`, and the stage lines also appear on UART0.
+
+A test pattern on HDMI only means step 2 happened: the PL shows it until the
+first DDR frame is swapped in.
 
 `BOOT.BIN` is FSBL + bitstream + U-Boot, built from the XSA by
 `os/scripts/build_boot_bin.sh`. It uses the PYNQ-Z2 `ps7_init` (DDR, clocks,
@@ -71,8 +75,11 @@ as `/dev/input/event*`; the emulator reads evdev directly.
 These are the parts that need a board to confirm:
 
 - **FSBL DDR init.** The FSBL comes from our XSA, so the DDR settings match
-  the PYNQ-Z2. If the board is still silent, check that `BOOT.BIN` is the one
-  built by `os/scripts/build_boot_bin.sh`.
+  the PYNQ-Z2. It enables UART0 on MIO 14/15, as the Digilent preset does. If
+  the board is still silent, check that `BOOT.BIN` is the one built by
+  `os/scripts/build_boot_bin.sh`.
+- **PS to PL video handoff.** Never confirmed on hardware. Reflash and read
+  `/var/log/console.log`; `docs/bringup.md` lists the exact checks.
 - **USB PHY.** The device tree uses the ZedBoard-style `usb-nop-xceiv` node.
   PYNQ-Z2 has a ULPI PHY; if the dongle is not detected, switch to the
   `ulpi-phy` node from TUL's reference tree.

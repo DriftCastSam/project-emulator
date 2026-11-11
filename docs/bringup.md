@@ -3,6 +3,54 @@
 Reverse chronological. One entry per board session: date, bitstream or image
 version, what was tested, result.
 
+## 2026-10-23
+
+No board attached. Console image `os/output/images/sdcard.img` (2026-10-22
+12:21, UART0 fix) plus `hw/build/BOOT.BIN`.
+
+What the last board session tells us: a test pattern on the TV means the FSBL
+configured the PL from the bitstream partition in `BOOT.BIN`. It does **not**
+mean U-Boot, Linux or `orbit-nes` ran: the pattern is what the PL shows until
+the first DDR frame is copied and swapped in (`show_pattern = pattern_en ||
+!display_ready` in `orbit_video.v`). A silent console plus a test pattern is
+therefore a pre-userspace failure, not a video failure.
+
+Checked without a board:
+
+- Host render: `orbit-nes "roms/Legend of Zelda, The (USA) (Rev 1).nes"
+  --ppm` produces the title screen (256x240, 12 colours). The core, the MMC1
+  mapper and the RGB565 conversion are fine.
+- `BOOT.BIN` holds three partitions: `fsbl.elf`, `orbit.bit`, `u-boot.elf`.
+- U-Boot's device tree (inside `u-boot.img`) has `serial0 = uart0`
+  (`/axi/serial@e0000000`), and the FSBL `ps7_init` enables UART0 on MIO 14/15,
+  matching the Digilent board preset (MIO 48/49 are 1.8 V and not the bridge).
+- Kernel `system.dtb` has `orbit-video@40000000` (`generic-uio`) and the
+  0x1f000000 reserved frame buffer. `boot.scr` loads `uImage` and
+  `system.dtb`; the U-Boot `bootcmd` sources `boot.scr` by name.
+- Timing unchanged: WNS +2.325 ns, 0 failing endpoints.
+
+Userspace no longer fails silently, so the next session can be read off the
+log instead of guessed:
+
+- `orbit_fb_open` checks the `ORB1` ID register before touching the frame
+  buffer and says when the PL register block does not answer.
+- `fbdemo` and `orbit-nes` print a register snapshot (`id`, `ctrl`, `status`,
+  `fb`, `dma`) and a SCRATCH round-trip result at startup.
+- `orbit-nes` is started with `--fb`, so a missing UIO node is an error rather
+  than a null sink that leaves the pattern on screen.
+- On a frame timeout the sink names the cause and exits; `S99console` logs
+  which path it took, prints it to the serial console, and falls back to
+  `fbdemo` if the emulator dies within a second.
+
+Next board session, in order:
+
+1. Capture UART0 (115200 8N1) from power-on. If there is no output at all,
+   the fault is before U-Boot: recheck the FSBL partition in `BOOT.BIN`.
+2. At the shell: `dmesg | grep -i uio`, `ls /dev/uio*`, `cat /var/log/console.log`.
+3. `fbdemo 600` and read the printed snapshot. `id=ORB1 scratch=...` means the
+   AXI-Lite path works; `no frame from the PL` with `dma=...error` points at
+   the HP0 read path, and a timeout with `done=0 busy=1` at a stuck copy.
+
 ## 2026-10-21
 
 No board connected yet.

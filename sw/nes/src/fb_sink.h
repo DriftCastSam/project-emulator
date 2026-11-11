@@ -15,8 +15,12 @@ public:
     FbSink& operator=(const FbSink&) = delete;
 
     bool ok() const { return fb_ != nullptr; }
+    bool failed() const override { return failed_; }
     void push(const uint16_t* rgb565, int w, int h) override;
 
 private:
+    void report(const char* what);
+
     struct orbit_fb* fb_;
+    bool failed_;
 };

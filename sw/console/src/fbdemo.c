@@ -41,6 +41,19 @@ int main(int argc, char **argv)
         return 1;
     }
 
+    struct orbit_fb_info info;
+    char line[192];
+    int rc = orbit_fb_probe(fb, &info);
+    orbit_fb_info_string(&info, line, sizeof(line));
+    if (rc != 0) {
+        fprintf(stderr, "video registers do not answer (scratch round-trip "
+                        "failed): %s\n", line);
+        orbit_fb_close(fb);
+        return 1;
+    }
+    printf("video ready: %s\n", line);
+    fflush(stdout);
+
     uint16_t *pixels = malloc(ORBIT_FB_BYTES);
     if (!pixels) {
         orbit_fb_close(fb);
@@ -80,7 +93,16 @@ int main(int argc, char **argv)
         }
 
         if (orbit_fb_wait_frame(fb, 100) != 0) {
-            fprintf(stderr, "no frame from the PL, is the bitstream loaded?\n");
+            char why[192];
+            orbit_fb_probe(fb, &info);
+            orbit_fb_info_string(&info, why, sizeof(why));
+            fprintf(stderr,
+                    "no frame from the PL after 100 ms, is the bitstream "
+                    "loaded? dma=0x%08x (busy=%u done=%u error=%u swaps=%u)\n",
+                    info.dma_status, info.dma_status & 1u,
+                    (info.dma_status >> 1) & 1u, (info.dma_status >> 2) & 1u,
+                    info.dma_status >> 16);
+            fprintf(stderr, "  %s\n", why);
             break;
         }
 

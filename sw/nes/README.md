@@ -11,9 +11,11 @@ the same emulator keeps working while the PPU and video path move to the PL.
 
 ```
 include/gui.hpp        headless GUI API the core links against
-src/gui.cpp            frame conversion (0x00RRGGBB -> RGB565) and stubs
+src/gui.cpp            frame conversion (0x00RRGGBB -> RGB565) and APU stub
 src/frame_sink.h       FrameSink, NullSink, PpmSink
 src/frame_sink.cpp     PPM writer with optional integer scaling
+src/fb_sink.h/.cpp     DDR framebuffer sink (/dev/uio0 + reserved memory)
+src/input.h/.cpp       evdev gamepad thread, 8BitDo XInput mapping
 src/main.cpp           orbit-nes command line frontend
 test/make_test_rom.py  builds a tiny synthetic NROM cartridge
 test/check_ppm.py      validates the PPM and counts colours
@@ -39,14 +41,16 @@ All changes are outside `vendor/`:
   adds `frame_rgb565()`, `frame_ready()` and `clear_frame_ready()`.
 - `src/gui.cpp` converts the PPU's 256x240 `u32` frame (stored as `0x00RRGGBB`)
   to RGB565 and sets the frame-ready flag. Audio samples are discarded,
-  controller 0 reads as all buttons released, fast-forward is always false.
+  fast-forward is always false, and controller 0 comes from the evdev thread.
 - `src/frame_sink.*` decouples the frontend from the video backend. `PpmSink`
-  writes a binary PPM; `NullSink` drops frames.
+  writes a binary PPM; `NullSink` drops frames; `FbSink` sends frames to the PL
+  and blocks on the display swap.
+- `src/input.*` finds a gamepad under `/dev/input`, reads it on a thread and
+  publishes the NES button byte.
 - `src/main.cpp` implements the `orbit-nes` command line.
 
 The frame contract matches the hardware path: 256x240 RGB565, 512 bytes per
-row. A DDR framebuffer sink can be added behind `FrameSink` without touching
-the emulator.
+row.
 
 ## Build
 
@@ -62,11 +66,15 @@ make clean
 
 ```
 orbit-nes <rom.nes> [--frames N] [--ppm out.ppm] [--scale N]
+          [--input PATH] [--fb] [--null]
 ```
 
-- `--frames N` run N frames (default 60)
+- `--frames N` run N frames (0 or unset with the DDR sink: forever)
 - `--ppm FILE` write the last frame as a binary PPM (P6, 8-bit RGB)
 - `--scale N` integer nearest-neighbour upscale for the PPM (default 1)
+- `--input PATH` evdev device (default: scan `/dev/input`)
+- `--fb` require the PL framebuffer; fail instead of falling back to no video
+- `--null` run without a video backend
 
 ```sh
 build/orbit-nes roms/game.nes --frames 120 --ppm frame.ppm --scale 2
@@ -89,16 +97,16 @@ least two distinct pixel values. It prints the PPM path and the colour count.
 
 ## Missing pieces
 
-- **Input**: `get_joypad_state` always returns 0. The evdev backend (8BitDo over
-  Bluetooth, USB keyboard fallback) still has to feed a controller byte.
 - **Audio**: `new_samples` is a no-op. ALSA output and the sample queue are not
-  implemented; the APU runs but its samples are dropped.
-- **Video sink**: only PPM and null sinks exist. The DDR framebuffer sink
-  (`/dev/uio`, register map `0x4000_0000`, `FB_ADDR`/`DMA_CTRL`) is not written.
+  implemented; the APU runs but its samples are dropped. This is milestone 6
+  in `docs/roadmap.md`, and it needs the PL I2S path to the ADAU1761.
+- **Framebuffer sink**: implemented (`src/fb_sink.cpp`), but never confirmed on
+  a board; the handoff is instrumented and documented in `docs/bringup.md`.
 - **Hardware PPU**: the software PPU is the only renderer. The `--ppu=hw`
   backend and the register mirror are not implemented.
-- **Pacing**: the frame loop runs as fast as the host allows. There is no
-  vsync or wall-clock limiter, which is fine for tests but wrong for a console.
+- **Pacing**: the DDR sink blocks on the PL frame swap, which paces the
+  emulator. The PPM and null sinks run as fast as the host allows, which is
+  fine for tests.
 - **Frontend extras**: save states, menus, ROM selection and fast-forward are
   not exposed by the CLI. `SaveState::save/load` exists in the core but is not
   wired up.

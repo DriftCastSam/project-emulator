@@ -200,7 +200,9 @@ its PPU is easy to replace. Modifications:
 
 - headless core API, no SDL, no GUI
 - video backend (`FbSink`) writes RGB565 through UIO and the reserved
-  framebuffer, and blocks on the display swap
+  framebuffer, and blocks on the display swap. It checks the `ORB1` ID register
+  before the first frame, prints a register snapshot at startup, and stops the
+  console with the reason if the PL stops answering.
 - input backend (`Input`) reads evdev, scans for a gamepad, and maps 8BitDo
   XInput buttons and hat/sticks to the NES shift-register byte
 - audio backend writes ALSA (phase 4)

@@ -23,6 +23,12 @@ extern "C" {
 #define ORBIT_FB_BYTES  (ORBIT_FB_PIXELS * 2u)
 #define ORBIT_FB_PHYS_DEFAULT 0x1F000000u
 
+/* ID register value, "ORB1". */
+#define ORBIT_ID_VALUE 0x4F524231u
+
+/* Value written to SCRATCH by orbit_fb_probe(). */
+#define ORBIT_SCRATCH_MAGIC 0x0B1A5C3u
+
 /* Register offsets, see docs/architecture.md. */
 #define ORBIT_REG_ID         0x00u
 #define ORBIT_REG_CTRL       0x04u
@@ -46,11 +52,33 @@ extern "C" {
 #define ORBIT_DMA_DONE   (1u << 1)
 #define ORBIT_DMA_ERROR  (1u << 2)
 
+/* Register snapshot, in the order the PL exposes them. */
+struct orbit_fb_info {
+    uint32_t id;
+    uint32_t ctrl;
+    uint32_t status;
+    uint32_t fb_addr;
+    uint32_t fb_stride;
+    uint32_t dma_status;
+    uint32_t scratch;
+};
+
 struct orbit_fb;
 
+/* Opens the UIO node and the DDR buffer. Fails when the register block does
+ * not answer with the "ORB1" ID, which is what a missing or stale bitstream
+ * looks like. */
 struct orbit_fb *orbit_fb_open(const char *uio_path, const char *mem_path,
                                uint32_t fb_phys);
 void orbit_fb_close(struct orbit_fb *fb);
+
+/* Reads the whole register block and round-trips SCRATCH. Returns 0 when the
+ * PL answers, -1 otherwise. Fills *info with what was read either way. */
+int orbit_fb_probe(struct orbit_fb *fb, struct orbit_fb_info *info);
+
+/* One line for a log: "id=ORB1 ctrl=0x0 status=0x...dma=0x..." */
+void orbit_fb_info_string(const struct orbit_fb_info *info, char *out,
+                          size_t len);
 
 /* Copy a 256x240 RGB565 frame into the DDR buffer and start a copy. */
 int orbit_fb_commit(struct orbit_fb *fb, const uint16_t *pixels);
@@ -60,6 +88,7 @@ int orbit_fb_wait_frame(struct orbit_fb *fb, int timeout_ms);
 
 uint32_t orbit_fb_frame_count(struct orbit_fb *fb);
 uint32_t orbit_fb_status(struct orbit_fb *fb);
+uint32_t orbit_fb_dma_status(struct orbit_fb *fb);
 
 /* Helpers, also used by host tests. */
 static inline uint16_t orbit_rgb565(uint8_t r, uint8_t g, uint8_t b)
