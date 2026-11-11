@@ -22,7 +22,7 @@ CORE_OBJ := $(patsubst %.cpp,$(BUILD)/obj/%.o,$(CORE_SRC))
 FE_OBJ   := $(patsubst %.cpp,$(BUILD)/obj/%.o,$(FE_SRC))
 FB_OBJ   := $(BUILD)/obj/fb.o
 
-.PHONY: all orbit-nes test clean
+.PHONY: all orbit-nes test ppu-golden clean
 
 all: $(BIN)
 
@@ -44,6 +44,15 @@ $(FE_OBJ): $(BUILD)/obj/%.o: %.cpp
 $(FB_OBJ): $(FB_SRC)
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
+
+# Golden vector generator for the hardware PPU testbenches (hw/sim). It links the
+# vendored core and the frontend's GUI shim, with no CPU and no video sink.
+GOLDEN := $(BUILD)/ppu_golden
+
+ppu-golden: $(GOLDEN)
+
+$(GOLDEN): test/ppu_golden.cpp $(CORE_OBJ) $(BUILD)/obj/src/gui.o
+	$(CXX) $(CXXFLAGS) $(THREAD) $(WARN) $(CPPFLAGS) -o $@ $^
 
 test: $(BIN)
 	@mkdir -p $(BUILD)
