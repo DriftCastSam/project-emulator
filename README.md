@@ -15,6 +15,16 @@ emulator are built and tested on the host. The Linux image is configured and
 building. Nothing has run on a board yet; see
 [`docs/bringup.md`](docs/bringup.md) for exactly what was verified.
 
+## AI disclosure
+
+This project is vibe-coded: nearly all of the code, RTL, build scripts and
+documentation were written by AI coding agents, with a human directing the
+work, reviewing results and running the tools. It is also an experiment to
+find where AI assistance falls short in RTL design, such as timing closure,
+hardware-accurate behavior and board bring-up. Expect rough edges, and treat
+nothing as verified unless [`docs/bringup.md`](docs/bringup.md) says it ran on
+real hardware.
+
 ## Repository layout
 
 ```
